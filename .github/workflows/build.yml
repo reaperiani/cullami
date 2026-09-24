@@ -1,0 +1,43 @@
+name: Build Cullami
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-2022
+            generator: Visual Studio 17 2022
+            configure_args: -A x64
+          - name: macOS universal
+            os: macos-14
+            generator: Unix Makefiles
+            configure_args: -DCMAKE_OSX_ARCHITECTURES=arm64\;x86_64
+          - name: Linux x64
+            os: ubuntu-24.04
+            generator: Unix Makefiles
+            configure_args: ''
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G "${{ matrix.generator }}"
+          ${{ matrix.configure_args }}
+          -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Upload plugins
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cullami-${{ matrix.os }}
+          path: build/bin/
