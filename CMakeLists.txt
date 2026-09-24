@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(Cullami VERSION 1.0.1 LANGUAGES CXX)
+project(Cullami VERSION 1.0.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,6 +8,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(DPF_LIBRARIES OFF CACHE BOOL "" FORCE)
 set(DPF_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+# DPF downloads Khronos headers for MSVC, but does not create this nested
+# directory itself on a clean checkout.
+if(MSVC)
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/dpf/khronos/KHR")
+endif()
+
 add_subdirectory(dpf)
 
 set(CULLAMI_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
