@@ -1,5 +1,8 @@
 name: Build Cullami
 
+env:
+  CULLAMI_VERSION: 1.0.1
+
 on:
   push:
   pull_request:
@@ -41,8 +44,35 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build --config Release --parallel 2
-      - name: Upload plugins
+      - name: Ad-hoc sign macOS plugins
+        if: runner.os == 'macOS'
+        run: |
+          codesign --force --deep --sign - build/bin/Cullami.clap
+          codesign --force --deep --sign - build/bin/Cullami.vst3
+          codesign --verify --deep --strict build/bin/Cullami.clap
+          codesign --verify --deep --strict build/bin/Cullami.vst3
+      - name: Package Windows plugins
+        if: runner.os == 'Windows'
+        working-directory: build/bin
+        run: >-
+          cmake -E tar cfv "../../Cullami-${{ env.CULLAMI_VERSION }}-windows-x64.zip"
+          --format=zip Cullami.clap Cullami.vst3
+      - name: Package macOS plugins
+        if: runner.os == 'macOS'
+        working-directory: build/bin
+        run: >-
+          tar -czf "../../Cullami-${{ env.CULLAMI_VERSION }}-macos-universal.tar.gz"
+          Cullami.clap Cullami.vst3
+      - name: Package Linux plugins
+        if: runner.os == 'Linux'
+        working-directory: build/bin
+        run: >-
+          tar -czf "../../Cullami-${{ env.CULLAMI_VERSION }}-linux-x64.tar.gz"
+          Cullami.clap Cullami.vst3
+      - name: Upload package
         uses: actions/upload-artifact@v7
         with:
-          name: Cullami-${{ matrix.os }}
-          path: build/bin/
+          name: Cullami-package-${{ matrix.os }}
+          path: Cullami-${{ env.CULLAMI_VERSION }}-*
+          if-no-files-found: error
+          compression-level: 0
